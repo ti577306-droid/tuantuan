@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>气团团交互小程序原型</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: #3f332b;
+      font-family: "Arial Rounded MT Bold", "Avenir Next", "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at 18% 10%, rgba(255, 188, 112, .48), transparent 25%),
+        radial-gradient(circle at 82% 12%, rgba(141, 184, 234, .42), transparent 28%),
+        linear-gradient(145deg, #ffe7cb 0%, #dcecff 45%, #fff8ef 100%);
+      overflow-x: hidden;
+    }
+    button, input, textarea { font: inherit; }
+    button { border: 0; background: transparent; color: inherit; cursor: pointer; }
+    .wrap {
+      display: grid;
+      grid-template-columns: minmax(280px, 390px) minmax(320px, 430px);
+      gap: 54px;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 28px;
+    }
+    .intro h1 {
+      margin: 0;
+      font-size: clamp(38px, 5vw, 68px);
+      line-height: 1.04;
+      font-weight: 950;
+    }
+    .intro p {
+      margin: 20px 0 0;
+      color: rgba(82, 64, 52, .78);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+    .quick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+    .quick button {
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 999px;
+      color: #805237;
+      font-weight: 800;
+      background: rgba(255,255,255,.62);
+      box-shadow: 0 14px 30px rgba(142, 86, 46, .1);
+      backdrop-filter: blur(18px);
+    }
+    .phone {
+      position: relative;
+      width: min(390px, calc(100vw - 34px));
+      height: min(844px, calc(100vh - 32px));
+      min-height: 720px;
+      border: 9px solid rgba(48, 38, 33, .9);
+      border-radius: 42px;
+      overflow: hidden;
+      background: #fff7ed;
+      box-shadow: 0 36px 110px rgba(72, 50, 36, .28);
+    }
+    .notch {
+      position: absolute;
+      z-index: 30;
+      left: 50%;
+      top: 12px;
+      width: 92px;
+      height: 23px;
+      border-radius: 999px;
+      background: #211c1b;
+      transform: translateX(-50%);
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: 48px 18px 92px;
+      background:
+        radial-gradient(circle at 13% 8%, rgba(255, 213, 151, .72), transparent 27%),
+        radial-gradient(circle at 92% 10%, rgba(153, 191, 233, .42), transparent 30%),
+        linear-gradient(180deg, #fff2e3 0%, #edf7ff 49%, #fff8ef 100%);
+      overflow: hidden;
+    }
+    .screen.active { display: flex; }
+    .screen.no-tab { padding-bottom: 28px; }
+    .scroll { min-height: 0; overflow-y: auto; padding-right: 2px; }
+    .card {
+      border: 1px solid rgba(255,255,255,.76);
+      border-radius: 24px;
+      background: rgba(255,255,255,.68);
+      box-shadow: 0 18px 46px rgba(151, 91, 47, .12);
+      backdrop-filter: blur(18px);
+    }
+    .title {
+      margin: 0;
+      color: #3b2e27;
+      font-size: 31px;
+      line-height: 1.14;
+      font-weight: 950;
+    }
+    .hint {
+      margin: 12px 0 0;
+      color: #846f61;
+      font-size: 14px;
+      line-height: 1.68;
+    }
+    .cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      min-height: 56px;
+      padding: 7px 7px 7px 20px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffb66d, #e9823b);
+      box-shadow: 0 16px 34px rgba(231, 126, 54, .25);
+    }
+    .cta.light {
+      color: #835437;
+      background: rgba(255,255,255,.76);
+      border: 1px solid rgba(245, 176, 109, .36);
+      box-shadow: 0 14px 30px rgba(142, 86, 46, .1);
+    }
+    .cta:after {
+      content: "→";
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      color: #e9823b;
+      background: #fff;
+      font-size: 23px;
+      line-height: 1;
+    }
+    .cta.light:after { color: #fff; background: #2f2927; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      color: #845535;
+      font-size: 12px;
+      font-weight: 850;
+      background: rgba(255,255,255,.74);
+    }
+    .weather-icon {
+      position: relative;
+      display: inline-block;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+    }
+    .weather-icon.sun:before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 34%, #fff7c7, #ffc95e 62%, #ef873a);
+      box-shadow: 0 0 0 6px rgba(255,197,94,.2), 0 9px 18px rgba(232,126,55,.18);
+    }
+    .weather-icon.cloud:before, .weather-icon.rain:before {
+      content: "";
+      position: absolute;
+      left: 5px; right: 4px; bottom: 9px; height: 14px;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 8px 16px rgba(116,136,168,.14);
+    }
+    .weather-icon.cloud:after, .weather-icon.rain:after {
+      content: "";
+      position: absolute;
+      left: 10px; bottom: 15px; width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 10px 3px 0 #fff, 0 8px 16px rgba(116,136,168,.14);
+    }
+    .weather-icon.rain i, .weather-icon.snow i, .weather-icon.thunder i, .weather-icon.wind i { position: absolute; display: block; }
+    .weather-icon.rain i {
+      left: 11px; bottom: 1px; width: 4px; height: 10px;
+      border-radius: 999px; background: #73a7ed;
+      transform: rotate(18deg);
+      box-shadow: 10px -2px 0 #73a7ed;
+    }
+    .weather-icon.mist:before {
+      content: "";
+      position: absolute;
+      left: 4px; right: 4px; top: 10px; height: 4px;
+      border-radius: 999px;
+      background: #c9c5bd;
+      box-shadow: 0 8px 0 #d8d1c9, 8px 16px 0 #c9c5bd;
+    }
+    .weather-icon.snow:before {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #f7fbff, #b8d4ed);
+      box-shadow: inset 0 4px 8px rgba(255,255,255,.78), 0 10px 18px rgba(123,161,191,.16);
+    }
+    .weather-icon.snow i {
+      left: 16px; top: 8px; width: 2px; height: 18px;
+      border-radius: 999px; background: #6c94b7;
+    }
+    .weather-icon.snow i:before, .weather-icon.snow i:after {
+      content: "";
+      position: absolute; inset: 0; border-radius: 999px; background: #6c94b7;
+    }
+    .weather-icon.snow i:before { transform: rotate(60deg); }
+    .weather-icon.snow i:after { transform: rotate(-60deg); }
+    .weather-icon.thunder:before {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 13px;
+      background: linear-gradient(145deg, #d4c5ff, #8e83dc);
+    }
+    .weather-icon.thunder i {
+      left: 13px; top: 7px; width: 12px; height: 20px;
+      background: #ffd15e;
+      clip-path: polygon(46% 0, 100% 0, 62% 42%, 100% 42%, 25% 100%, 44% 54%, 0 54%);
+    }
+    .weather-icon.wind:before {
+      content: "";
+      position: absolute;
+      left: 4px; right: 4px; top: 9px; height: 4px;
+      border-radius: 999px;
+      background: #79bfa7;
+      box-shadow: 7px 9px 0 #79bfa7;
+    }
+    .weather-icon.wind i {
+      right: 5px; top: 6px; width: 10px; height: 10px;
+      border: 3px solid #79bfa7;
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+    }
+    .welcome-art {
+      position: relative;
+      height: 448px;
+      margin: -10px -10px 0;
+      overflow: hidden;
+      border-radius: 0 0 32px 32px;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255, 217, 146, .72), transparent 24%),
+        radial-gradient(circle at 82% 20%, rgba(151, 190, 235, .5), transparent 28%),
+        linear-gradient(180deg, #fff0dc 0%, #e3f2ff 60%, #fff8ef 100%);
+    }
+    .welcome-art img {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      bottom: -6px;
+      width: 96%;
+      height: 96%;
+      object-fit: contain;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 24px 34px rgba(187, 111, 54, .2));
+    }
+    .welcome-art:after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      z-index: 3;
+      height: 128px;
+      background: linear-gradient(180deg, rgba(255,247,236,0), #fff7ed 84%);
+    }
+    .welcome-copy { position: relative; z-index: 5; margin-top: -24px; }
+    .bottom { margin-top: auto; display: grid; gap: 10px; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .back, .icon-btn {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      color: #815737;
+      font-size: 20px;
+      font-weight: 900;
+      background: rgba(255,255,255,.72);
+      box-shadow: 0 10px 22px rgba(150, 90, 45, .08);
+    }
+    .top-title { flex: 1; text-align: center; font-size: 16px; font-weight: 950; }
+    .role-list, .permission-list, .friend-list, .copy-list { display: grid; gap: 12px; margin-top: 18px; }
+    .role-card, .permission-row {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      text-align: left;
+    }
+    .role-card.active { border-color: rgba(232,126,55,.58); background: rgba(255,249,242,.92); }
+    .orb {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      color: #fff;
+      font-weight: 950;
+      box-shadow: inset 0 8px 14px rgba(255,255,255,.34);
+    }
+    .row-title, .row-sub, .check, .label, .value { display: block; }
+    .row-title { font-size: 16px; font-weight: 900; }
+    .row-sub { margin-top: 5px; color: #857367; font-size: 12px; line-height: 1.42; }
+    .check { color: #e9823b; font-size: 12px; font-weight: 900; }
+    .toggle {
+      width: 42px;
+      height: 24px;
+      padding: 3px;
+      border-radius: 999px;
+      background: #e9823b;
+    }
+    .toggle:after {
+      content: "";
+      display: block;
+      width: 18px;
+      height: 18px;
+      margin-left: auto;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .weather-bar {
+      display: grid;
+      grid-template-columns: 62px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+    }
+    .weather-mark {
+      display: grid;
+      place-items: center;
+      width: 62px;
+      height: 62px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(255,226,174,.96), rgba(255,255,255,.7));
+      box-shadow: 0 16px 28px rgba(230, 138, 56, .14);
+    }
+    .weather-mark .weather-icon { width: 42px; height: 42px; }
+    .weather-bar strong, .weather-bar span { display: block; }
+    .weather-bar strong { font-size: 16px; font-weight: 950; }
+    .weather-bar span { margin-top: 5px; color: #837165; font-size: 12px; line-height: 1.35; }
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 360px;
+      margin-top: 13px;
+      padding: 0;
+      border-radius: 30px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(255,211,143,.76), transparent 25%),
+        radial-gradient(circle at 86% 15%, rgba(138,181,231,.42), transparent 28%),
+        linear-gradient(180deg, #fff0dc 0%, #e6f4ff 58%, #fff8ef 100%);
+    }
+    .stage:before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      left: 50%;
+      bottom: -10px;
+      width: 334px;
+      height: 334px;
+      background: url("assets/tuantuan-character.png") center bottom / contain no-repeat;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 22px 28px rgba(176,105,48,.2));
+      animation: breathe 3.6s ease-in-out infinite;
+    }
+    .stage-badge {
+      position: absolute;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      color: #845535;
+      font-size: 12px;
+      font-weight: 900;
+      background: rgba(255,255,255,.78);
+      box-shadow: 0 12px 24px rgba(176,105,48,.12);
+    }
+    .stage-badge.left { left: 16px; top: 16px; }
+    .stage-badge.right { right: 16px; top: 62px; }
+    .poke {
+      position: absolute;
+      z-index: 5;
+      left: 50%;
+      top: 25px;
+      display: none;
+      min-width: 180px;
+      padding: 11px 14px;
+      border-radius: 999px;
+      color: #7b4d2f;
+      font-size: 13px;
+      font-weight: 900;
+      text-align: center;
+      background: rgba(255,255,255,.9);
+      transform: translateX(-50%);
+      box-shadow: 0 12px 28px rgba(181,104,48,.14);
+    }
+    .poke.show { display: block; }
+    .status-card { margin-top: 12px; padding: 14px; }
+    .status-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .status-head strong { font-size: 17px; font-weight: 950; }
+    .chat-dot {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      color: #fff;
+      background: linear-gradient(135deg, #ffb66d, #e9823b);
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .status-item {
+      min-height: 74px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,249,242,.76);
+    }
+    .status-item.wide { grid-column: span 2; }
+    .label { color: #9a8c82; font-size: 12px; }
+    .value { margin-top: 7px; font-size: 15px; font-weight: 950; }
+    .value .weather-icon { transform: scale(.68); vertical-align: middle; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .mood-hero, .guard-hero, .mine-hero {
+      display: grid;
+      grid-template-columns: 1fr 98px;
+      gap: 12px;
+      align-items: center;
+      margin-top: 14px;
+      padding: 14px;
+      overflow: hidden;
+    }
+    .mood-hero img, .guard-hero img, .mine-hero img {
+      width: 98px;
+      height: 98px;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 18px rgba(176,105,48,.16));
+    }
+    .mood-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .mood {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 10px;
+      align-items: center;
+      min-height: 76px;
+      padding: 12px;
+      text-align: left;
+    }
+    .mood.active { border-color: rgba(232,126,55,.58); background: rgba(255,249,242,.92); }
+    .mood strong, .mood span { display: block; }
+    .mood strong { font-size: 16px; font-weight: 950; }
+    .mood span { margin-top: 5px; color: #837165; font-size: 12px; }
+    .mood-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.78);
+    }
+    .mood-icon .weather-icon { transform: scale(.9); }
+    .note {
+      width: 100%;
+      min-height: 92px;
+      margin-top: 12px;
+      padding: 13px;
+      resize: none;
+      border: 0;
+      outline: 0;
+      color: #42352d;
+      font-size: 14px;
+    }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .tag {
+      padding: 8px 11px;
+      border-radius: 999px;
+      color: #866f5d;
+      font-size: 11px;
+      background: rgba(255,255,255,.68);
+    }
+    .tag.active { color: #fff; background: linear-gradient(135deg, #ffb66d, #e9823b); }
+    .reply {
+      display: none;
+      grid-template-columns: 50px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .reply.show { display: grid; }
+    .reply img, .chat-head img, .profile img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .reply strong, .reply span { display: block; }
+    .reply strong { font-size: 14px; }
+    .reply span { margin-top: 5px; color: #6f5a4b; font-size: 12px; line-height: 1.45; }
+    .friend {
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+    }
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      color: #fff;
+      background: linear-gradient(135deg, #ffc071, #e9823b);
+      font-weight: 950;
+    }
+    .friend strong, .friend span { display: block; }
+    .friend strong { font-size: 14px; font-weight: 950; }
+    .friend span { margin-top: 4px; color: #837165; font-size: 12px; line-height: 1.35; }
+    .care-btn {
+      min-width: 64px;
+      min-height: 34px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      background: #e9823b;
+    }
+    .sheet {
+      position: absolute;
+      z-index: 40;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      padding: 18px;
+      background: rgba(61,45,35,.28);
+    }
+    .sheet.show { display: flex; }
+    .sheet-panel {
+      width: 100%;
+      padding: 16px;
+      border-radius: 26px;
+      background: rgba(255,249,242,.96);
+    }
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-weight: 950;
+    }
+    .sheet-head button {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      color: #8c7c72;
+      background: rgba(255,255,255,.76);
+    }
+    .copy-card { padding: 12px; margin-top: 9px; }
+    .copy-card b, .copy-card span { display: block; }
+    .copy-card b { color: #e9823b; font-size: 12px; }
+    .copy-card span { margin-top: 6px; color: #614d40; font-size: 13px; line-height: 1.5; }
+    .profile, .device {
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .device { grid-template-columns: 1fr auto; }
+    .profile strong, .profile span, .device strong, .device span { display: block; }
+    .profile strong { font-size: 21px; font-weight: 950; }
+    .profile span, .device span { margin-top: 5px; color: #837165; font-size: 12px; }
+    .menu { margin-top: 12px; padding: 4px 12px; }
+    .menu-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 50px;
+      border-bottom: 1px solid rgba(151,119,94,.12);
+      font-size: 14px;
+      font-weight: 850;
+    }
+    .menu-row:last-child { border-bottom: 0; }
+    .chat-head {
+      display: grid;
+      grid-template-columns: 50px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+    }
+    .messages { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 0; }
+    .msg {
+      width: fit-content;
+      max-width: 82%;
+      margin-bottom: 10px;
+      padding: 11px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .msg.tuan { color: #5b4435; background: rgba(255,255,255,.78); box-shadow: 0 10px 26px rgba(172,111,61,.09); }
+    .msg.me { margin-left: auto; color: #fff; background: linear-gradient(135deg, #ffb46a, #ec8139); }
+    .composer {
+      display: flex;
+      gap: 9px;
+      align-items: center;
+      padding: 9px 10px 9px 14px;
+    }
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-size: 14px;
+    }
+    .composer button {
+      min-width: 62px;
+      height: 36px;
+      border-radius: 999px;
+      color: #fff;
+      background: #e9823b;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .tabbar {
+      position: absolute;
+      z-index: 25;
+      left: 0; right: 0; bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      height: 76px;
+      padding: 8px 10px 12px;
+      border-top: 1px solid rgba(255,255,255,.7);
+      background: rgba(255,249,241,.92);
+      backdrop-filter: blur(18px);
+    }
+    .tab {
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      color: #9d8e82;
+      font-size: 12px;
+    }
+    .tab b {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 15px;
+      font-weight: 950;
+    }
+    .tab b .weather-icon { transform: scale(.58); }
+    .tab.active { color: #e9803b; font-weight: 950; }
+    .tab.active b { color: #fff; background: linear-gradient(135deg, #ffb86f, #e9823b); }
+    .toast {
+      position: absolute;
+      z-index: 60;
+      left: 50%;
+      bottom: 104px;
+      display: none;
+      padding: 10px 15px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 13px;
+      background: rgba(64,47,37,.84);
+      transform: translateX(-50%);
+    }
+    .toast.show { display: block; }
+    @keyframes breathe {
+      0%, 100% { transform: translateX(-50%) translateY(0) scale(1); }
+      50% { transform: translateX(-50%) translateY(-8px) scale(1.018); }
+    }
+    @media (max-width: 860px) {
+      .wrap { display: block; padding: 18px 0; }
+      .intro { width: min(390px, calc(100vw - 32px)); margin: 0 auto 18px; }
+      .intro h1 { font-size: 34px; }
+      .intro p { font-size: 14px; }
+      .phone { margin: 0 auto; min-height: 700px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="intro">
+      <h1>气团团交互小程序原型</h1>
+      <p>这版不是静态展板，可以点击认领、切换底部导航、记录内在天气、触发团团反馈、打开守护话术弹层，也能和团团发文字。</p>
+      <div class="quick">
+        <button data-go="welcome">认领流程</button>
+        <button data-go="home">团团首页</button>
+        <button data-go="mood">心情记录</button>
+        <button data-go="guard">好友守护</button>
+      </div>
+    </section>
+
+    <section class="phone">
+      <div class="notch"></div>
+
+      <section class="screen no-tab active" data-screen="welcome">
+        <div class="welcome-art"><img src="assets/tuantuan-character.png" alt="气团团"></div>
+        <div class="welcome-copy">
+          <h2 class="title">每个人都有自己的天气。</h2>
+          <p class="hint">认领一只团团，让它陪你记录外面的天气，也陪你看见里面的心情。</p>
+        </div>
+        <div class="bottom"><button class="cta" data-go="role">开始认领</button></div>
+      </section>
+
+      <section class="screen no-tab" data-screen="role">
+        <div class="topbar"><button class="back" data-go="welcome">‹</button><span class="top-title">选择角色</span><span class="icon-btn">•</span></div>
+        <h2 class="title">今天想靠近哪种天气？</h2>
+        <p class="hint">角色不是皮肤，而是团团陪你说话的语气。</p>
+        <div class="role-list">
+          <button class="role-card card active" data-role="晴团团"><span class="orb" style="background:#f49a3f">晴</span><span><span class="row-title">晴团团</span><span class="row-sub">温暖、元气、鼓励。</span></span><span class="check">已选</span></button>
+          <button class="role-card card" data-role="雪团团"><span class="orb" style="background:#9db7cc">雪</span><span><span class="row-title">雪团团</span><span class="row-sub">安静、克制、边界感。</span></span><span class="check"></span></button>
+          <button class="role-card card" data-role="雷电团团"><span class="orb" style="background:#8b80d8">雷</span><span><span class="row-title">雷电团团</span><span class="row-sub">直接、强烈、保护欲。</span></span><span class="check"></span></button>
+          <button class="role-card card" data-role="风团团"><span class="orb" style="background:#78bfa7">风</span><span><span class="row-title">风团团</span><span class="row-sub">自由、松弛、流动。</span></span><span class="check"></span></button>
+        </div>
+        <div class="bottom"><button class="cta" data-go="permission">认领 <span id="chosenRole">晴团团</span></button></div>
+      </section>
+
+      <section class="screen no-tab" data-screen="permission">
+        <div class="topbar"><button class="back" data-go="role">‹</button><span class="top-title">权限</span><span class="icon-btn">i</span></div>
+        <h2 class="title">让团团更懂你的天气</h2>
+        <p class="hint">V1 不接真实权限，这里先模拟位置、通知和隐私控制。</p>
+        <div class="permission-list">
+          <div class="permission-row card"><span class="orb" style="background:#e9823b">位</span><span><span class="row-title">位置权限</span><span class="row-sub">显示所在城市天气。</span></span><span class="toggle"></span></div>
+          <div class="permission-row card"><span class="orb" style="background:#79a8dc">铃</span><span><span class="row-title">通知权限</span><span class="row-sub">天气提醒、好友守护提醒。</span></span><span class="toggle"></span></div>
+          <div class="permission-row card"><span class="orb" style="background:#79bfa7">隐</span><span><span class="row-title">隐私可控</span><span class="row-sub">情绪记录默认仅自己可见。</span></span><span class="pill">可管理</span></div>
+        </div>
+        <div class="bottom"><button class="cta" data-go="home">进入气团团</button></div>
+      </section>
+
+      <section class="screen" data-screen="home">
+        <div class="scroll">
+          <div class="weather-bar card">
+            <span class="weather-mark"><span class="weather-icon sun"></span></span>
+            <div><strong>深圳 · 28℃</strong><span>今天深圳是晴天，适合把自己晒一晒。</span></div>
+            <span class="pill">晴</span>
+          </div>
+          <button class="stage" id="stage">
+            <span class="stage-badge left"><span class="weather-icon sun"></span> 外在晴天</span>
+            <span class="stage-badge right">团团在线</span>
+            <span class="poke" id="poke">别戳啦，我会痒~</span>
+          </button>
+          <div class="status-card card">
+            <div class="status-head"><strong>今日状态</strong><button class="chat-dot" data-go="chat">聊</button></div>
+            <div class="status-grid">
+              <div class="status-item"><span class="label">外在天气</span><span class="value"><span class="weather-icon sun"></span> 晴</span></div>
+              <div class="status-item"><span class="label">内在天气</span><span class="value" id="innerWeather"><span class="weather-icon mist"></span> 还没记录</span></div>
+              <div class="status-item wide"><span class="label">团团状态</span><span class="value"><span data-role-text>晴团团</span>想陪你说两句</span></div>
+            </div>
+          </div>
+          <div class="two-col"><button class="cta" data-go="mood">记录心情</button><button class="cta light" data-go="chat">和团团说话</button></div>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="mood">
+        <div class="scroll">
+          <h2 class="title">今天你的内在天气是？</h2>
+          <div class="mood-hero card"><div><span class="row-title">选一个天气就好。</span><span class="row-sub">不用把自己解释得很完整。</span></div><img src="assets/tuantuan-character.png" alt=""></div>
+          <div class="mood-grid">
+            <button class="mood card active" data-icon="sun" data-weather="晴" data-reply="我看见你今天心里有光。记得把这份亮亮的感觉留一点给晚上。"><span class="mood-icon"><span class="weather-icon sun"></span></span><span><strong>晴</strong><span>有能量</span></span></button>
+            <button class="mood card" data-icon="cloud" data-weather="多云" data-reply="还可以也很好呀。今天不用把自己推得太快，我们慢慢来。"><span class="mood-icon"><span class="weather-icon cloud"></span></span><span><strong>多云</strong><span>还可以</span></span></button>
+            <button class="mood card" data-icon="mist" data-weather="阴" data-reply="我看见你今天有点低低的。要不要让我陪你安静待一会儿？"><span class="mood-icon"><span class="weather-icon mist"></span></span><span><strong>阴</strong><span>有点低落</span></span></button>
+            <button class="mood card" data-icon="rain" data-weather="雨" data-reply="我看见你今天心里下雨了。要不要让我陪你安静待一会儿？"><span class="mood-icon"><span class="weather-icon rain"><i></i></span></span><span><strong>雨</strong><span>想被安慰</span></span></button>
+            <button class="mood card" data-icon="snow" data-weather="雪" data-reply="那我们就小声一点。你不需要立刻解释什么，我会在这里。"><span class="mood-icon"><span class="weather-icon snow"><i></i></span></span><span><strong>雪</strong><span>想安静</span></span></button>
+            <button class="mood card" data-icon="thunder" data-weather="雷" data-reply="烦的时候先不用讲道理。让我替你守一会儿边界，好吗？"><span class="mood-icon"><span class="weather-icon thunder"><i></i></span></span><span><strong>雷</strong><span>有点烦</span></span></button>
+          </div>
+          <textarea class="note card" placeholder="不用写很多，写一句也可以。"></textarea>
+          <div class="tags"><button class="tag">工作压力</button><button class="tag">睡不好</button><button class="tag">想家</button><button class="tag">关系烦恼</button><button class="tag">有点开心</button><button class="tag">不知道怎么说</button></div>
+          <button class="cta" id="recordMood" style="margin-top:12px">记录今天</button>
+          <div class="reply card" id="replyCard"><img src="assets/tuantuan-character.png" alt=""><div><strong><span data-role-text>晴团团</span>回应你</strong><span id="replyText">我看见你今天心里有光。</span></div></div>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="guard">
+        <div class="scroll">
+          <h2 class="title">守护在意的人</h2>
+          <p class="hint">不用追问，也可以把关心轻轻送到。</p>
+          <div class="guard-hero card"><div><span class="row-title">让团团替你去看看。</span><span class="row-sub">低负担关心，不打扰也抵达。</span></div><img src="assets/tuantuan-character.png" alt=""></div>
+          <div class="friend-list">
+            <div class="friend card"><span class="avatar">林</span><div><strong>小林｜上海｜小雨 22℃</strong><span>她的雪团团在线 · 今天看起来有点安静</span></div><button class="care-btn" data-care="小林">关心</button></div>
+            <div class="friend card"><span class="avatar" style="background:#79a8dc">然</span><div><strong>阿然｜杭州｜多云 25℃</strong><span>她的风团团在散步 · 像是需要透透气</span></div><button class="care-btn" data-care="阿然">关心</button></div>
+            <div class="friend card"><span class="avatar" style="background:#9db7cc">眠</span><div><strong>眠眠｜成都｜阴 21℃</strong><span>她的晴团团有点犯困 · 今天能量轻轻的</span></div><button class="care-btn" data-care="眠眠">关心</button></div>
+          </div>
+          <button class="cta light" style="margin-top:12px" data-toast="让我的团团去看看你">让我的团团去看看你</button>
+          <button class="cta light" style="margin-top:9px" data-toast="送一朵晴天给你">送一朵晴天给你</button>
+        </div>
+        <div class="sheet" id="careSheet">
+          <div class="sheet-panel card">
+            <div class="sheet-head"><span>发给 <span id="careName">小林</span> 的关心</span><button id="closeSheet">×</button></div>
+            <div class="copy-card card"><b>温柔版</b><span>今天先不急着变好，我只是想来陪你一会儿。</span></div>
+            <div class="copy-card card"><b>俏皮版</b><span>你的天气雷达上线啦，发现你可能需要一点点抱抱。</span></div>
+            <div class="copy-card card"><b>团团版</b><span>我的团团跑去看你啦，它说想把晴天分你一小朵。</span></div>
+            <button class="cta" style="margin-top:12px" data-toast="关心已送出">发送这一份</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="mine">
+        <div class="scroll">
+          <h2 class="title">我的气团团</h2>
+          <div class="mine-hero card"><div><span class="row-title">设备、通知、隐私和 AI 记忆。</span><span class="row-sub">后续可接真实硬件状态。</span></div><img src="assets/tuantuan-character.png" alt=""></div>
+          <div class="profile card"><img src="assets/tuantuan-character.png" alt=""><div><strong>小晴</strong><span>已认领 <span data-role-text>晴团团</span></span></div><span class="pill">在线</span></div>
+          <div class="device card"><div><strong>我的团团设备</strong><span>晴团团 · V1 原型设备</span></div><span class="pill">86%</span></div>
+          <div class="menu card">
+            <div class="menu-row"><span>设备管理</span><span>›</span></div>
+            <div class="menu-row"><span>通知设置</span><span>›</span></div>
+            <div class="menu-row"><span>隐私设置</span><span>›</span></div>
+            <div class="menu-row"><span>AI 记忆管理</span><span>›</span></div>
+            <div class="menu-row"><span>帮助与反馈</span><span>›</span></div>
+            <div class="menu-row"><span>关于气团团</span><span>›</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen no-tab" data-screen="chat">
+        <div class="topbar"><button class="back" data-go="home">‹</button><span class="top-title">和团团说话</span><span class="icon-btn">•</span></div>
+        <div class="chat-head card"><img src="assets/tuantuan-character.png" alt=""><div><span class="row-title"><span data-role-text>晴团团</span></span><span class="row-sub">在线，正在认真听你说</span></div></div>
+        <div class="messages" id="messages">
+          <div class="msg tuan">我在。你可以只说一句，也可以什么都不解释。</div>
+          <div class="msg tuan">今天外面的天气很好，里面的天气也可以慢慢看见。</div>
+        </div>
+        <div class="composer card"><input id="chatInput" placeholder="和团团说一句话"><button id="sendChat">发送</button></div>
+      </section>
+
+      <nav class="tabbar" id="tabbar">
+        <button class="tab active" data-go="home"><b><span class="weather-icon sun"></span></b>团团</button>
+        <button class="tab" data-go="mood"><b><span class="weather-icon cloud"></span></b>心情</button>
+        <button class="tab" data-go="guard"><b>♡</b>守护</button>
+        <button class="tab" data-go="mine"><b>•</b>我的</button>
+      </nav>
+      <div class="toast" id="toast"></div>
+    </section>
+  </main>
+
+  <script>
+    const screens = [...document.querySelectorAll(".screen")];
+    const tabbar = document.getElementById("tabbar");
+    const tabs = [...document.querySelectorAll(".tabbar .tab")];
+    const toast = document.getElementById("toast");
+    let role = "晴团团";
+    let selectedMood = {
+      icon: "sun",
+      weather: "晴",
+      reply: "我看见你今天心里有光。记得把这份亮亮的感觉留一点给晚上。"
+    };
+
+    function weatherIconMarkup(type) {
+      const extra = ["rain", "snow", "thunder", "wind"].includes(type) ? "<i></i>" : "";
+      return `<span class="weather-icon ${type}">${extra}</span>`;
+    }
+
+    function go(name) {
+      screens.forEach(screen => screen.classList.toggle("active", screen.dataset.screen === name));
+      const current = screens.find(screen => screen.dataset.screen === name);
+      tabbar.style.display = current && current.classList.contains("no-tab") ? "none" : "grid";
+      tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.go === name));
+    }
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
+    }
+
+    document.addEventListener("click", event => {
+      const goTarget = event.target.closest("[data-go]");
+      if (goTarget) go(goTarget.dataset.go);
+      const toastTarget = event.target.closest("[data-toast]");
+      if (toastTarget) showToast(toastTarget.dataset.toast);
+    });
+
+    document.querySelectorAll(".role-card").forEach(button => {
+      button.addEventListener("click", () => {
+        role = button.dataset.role;
+        document.querySelectorAll(".role-card").forEach(item => {
+          item.classList.remove("active");
+          item.querySelector(".check").textContent = "";
+        });
+        button.classList.add("active");
+        button.querySelector(".check").textContent = "已选";
+        document.getElementById("chosenRole").textContent = role;
+        document.querySelectorAll("[data-role-text]").forEach(item => item.textContent = role);
+      });
+    });
+
+    document.getElementById("stage").addEventListener("click", () => {
+      const poke = document.getElementById("poke");
+      poke.classList.add("show");
+      clearTimeout(window.pokeTimer);
+      window.pokeTimer = setTimeout(() => poke.classList.remove("show"), 1500);
+    });
+
+    document.querySelectorAll(".mood").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".mood").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        selectedMood = {
+          icon: button.dataset.icon,
+          weather: button.dataset.weather,
+          reply: button.dataset.reply
+        };
+      });
+    });
+
+    document.querySelectorAll(".tag").forEach(tag => {
+      tag.addEventListener("click", () => tag.classList.toggle("active"));
+    });
+
+    document.getElementById("recordMood").addEventListener("click", () => {
+      document.getElementById("innerWeather").innerHTML = `${weatherIconMarkup(selectedMood.icon)} ${selectedMood.weather}`;
+      document.getElementById("replyText").textContent = selectedMood.reply;
+      document.getElementById("replyCard").classList.add("show");
+      showToast("已记录今天的内在天气");
+    });
+
+    document.querySelectorAll("[data-care]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.getElementById("careName").textContent = button.dataset.care;
+        document.getElementById("careSheet").classList.add("show");
+      });
+    });
+
+    document.getElementById("closeSheet").addEventListener("click", () => {
+      document.getElementById("careSheet").classList.remove("show");
+    });
+
+    document.getElementById("careSheet").addEventListener("click", event => {
+      if (event.target.id === "careSheet") event.currentTarget.classList.remove("show");
+    });
+
+    function sendChat() {
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+      const messages = document.getElementById("messages");
+      const mine = document.createElement("div");
+      mine.className = "msg me";
+      mine.textContent = text;
+      const reply = document.createElement("div");
+      reply.className = "msg tuan";
+      reply.textContent = "我收到啦。先把这句话放在我这里，你不用一个人拿着。";
+      messages.append(mine, reply);
+      input.value = "";
+      messages.scrollTop = messages.scrollHeight;
+    }
+    document.getElementById("sendChat").addEventListener("click", sendChat);
+    document.getElementById("chatInput").addEventListener("keydown", event => {
+      if (event.key === "Enter") sendChat();
+    });
+
+    go("welcome");
+  </script>
+</body>
+</html>
